@@ -1,6 +1,6 @@
 /**
  * DREAM CART BD — SPA CLIENT ROUTER
- * Lightweight hash-based router with built-in fault tolerance.
+ * Lightweight hash-based router supporting all customer, partner, and admin views.
  */
 
 import { renderHomePage } from './pages/storefront/HomePage.js';
@@ -9,6 +9,10 @@ import { renderProductDetailPage } from './pages/storefront/ProductDetailPage.js
 import { renderCheckoutPage } from './pages/storefront/CheckoutPage.js';
 import { renderOrderSuccessPage } from './pages/storefront/OrderSuccessPage.js';
 import { renderTrackOrderPage } from './pages/storefront/TrackOrderPage.js';
+import { renderLoginPage } from './pages/storefront/LoginPage.js';
+import { renderRegisterPage } from './pages/storefront/RegisterPage.js';
+import { renderFraudPage } from './pages/storefront/FraudPage.js';
+import { renderCustomerDashboard } from './pages/customer/Dashboard.js';
 import { renderAdminPortal } from './pages/admin/AdminPortal.js';
 import { renderPartnerPortal } from './pages/partner/PartnerPortal.js';
 
@@ -20,8 +24,15 @@ export const router = {
     '/checkout': renderCheckoutPage,
     '/order-success': renderOrderSuccessPage,
     '/track': renderTrackOrderPage,
+    '/login': renderLoginPage,
+    '/register': renderRegisterPage,
+    '/fraud': renderFraudPage,
+    '/account': renderCustomerDashboard,
     '/admin': renderAdminPortal,
-    '/partner': renderPartnerPortal
+    '/partner': renderPartnerPortal,
+    '/seller': renderPartnerPortal,
+    '/reseller': renderPartnerPortal,
+    '/wholesale': renderPartnerPortal
   },
 
   async navigate() {

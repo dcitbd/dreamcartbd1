@@ -10,6 +10,7 @@ import { renderCartDrawer } from './components/CartDrawer.js';
 import { renderFraudModal } from './components/FraudModal.js';
 import { toast } from './components/Toast.js';
 import { cartStore } from './store/cartStore.js';
+import { authStore } from './store/authStore.js';
 import { router } from './router.js';
 import { apiClient } from './api/client.js';
 
@@ -39,11 +40,15 @@ function initApp() {
     const fraudMount = document.getElementById('fraudmodal-mount');
     if (fraudMount) fraudMount.innerHTML = renderFraudModal();
 
-    // Listen to Cart Store changes
+    // Listen to Cart Store and Auth Store changes
     cartStore.subscribe(() => {
       updateHeader();
       updateMobileNav();
       updateCartDrawer();
+    });
+
+    authStore.subscribe(() => {
+      updateHeader();
     });
 
     // Attach global event delegation
@@ -59,19 +64,12 @@ function initApp() {
         type: "success",
         title: "Welcome to Dream Cart BD!",
         message: "Enjoy nationwide Cash on Delivery with code DREAM10 for 10% off.",
-        duration: 5000
+        duration: 4000
       });
-    }, 1000);
+    }, 800);
 
   } catch (err) {
     console.error("Application initialization error:", err);
-    document.body.innerHTML = `
-      <div style="font-family: sans-serif; padding: 40px; text-align: center;">
-        <h2 style="color: #059669;">Dream Cart BD</h2>
-        <p style="color: #64748b;">Loading platform interface...</p>
-        <button onclick="location.reload()" style="margin-top: 16px; padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer;">Reload Application</button>
-      </div>
-    `;
   }
 }
 
@@ -108,16 +106,6 @@ function closeCartDrawer() {
   }
 }
 
-function openFraudModal() {
-  const modal = document.getElementById('fraud-modal-backdrop');
-  if (modal) modal.classList.add('active');
-}
-
-function closeFraudModal() {
-  const modal = document.getElementById('fraud-modal-backdrop');
-  if (modal) modal.classList.remove('active');
-}
-
 function attachEventListeners() {
   document.addEventListener('click', async (e) => {
     // Open Cart Drawer
@@ -130,14 +118,95 @@ function attachEventListeners() {
       closeCartDrawer();
     }
 
-    // Open Fraud Modal
-    if (e.target.closest('#btn-open-fraud-tool')) {
-      openFraudModal();
+    // Header Logout
+    if (e.target.closest('#btn-header-logout')) {
+      authStore.logout();
+      toast.show({ type: "info", title: "Signed Out", message: "You have been logged out successfully." });
+      window.location.hash = "#/";
     }
 
-    // Close Fraud Modal
-    if (e.target.closest('#btn-close-fraud-modal') || (e.target.id === 'fraud-modal-backdrop')) {
-      closeFraudModal();
+    // 1-Click Demo Login
+    const demoBtn = e.target.closest('.btn-demo-login');
+    if (demoBtn) {
+      const role = demoBtn.dataset.role;
+      const id = demoBtn.dataset.id;
+      const pass = demoBtn.dataset.pass;
+      const res = await apiClient.request("auth/login", { identifier: id, password: pass });
+      if (res.success) {
+        authStore.setUser(res.user, res.token);
+        toast.show({ type: "success", title: "Logged in as " + res.user.name, message: "Role: " + res.user.role });
+        
+        // Auto-redirect to respective dashboard
+        if (role === "SUPER_ADMIN" || role === "ADMIN") {
+          window.location.hash = "#/admin";
+        } else if (role === "SELLER") {
+          window.location.hash = "#/seller";
+        } else if (role === "RESELLER") {
+          window.location.hash = "#/reseller";
+        } else if (role === "WHOLESALE_CUSTOMER") {
+          window.location.hash = "#/wholesale";
+        } else {
+          window.location.hash = "#/account";
+        }
+      }
+    }
+
+    // Fraud test quick buttons
+    const phoneBtn = e.target.closest('.btn-test-phone');
+    if (phoneBtn && phoneBtn.dataset.phone) {
+      const input = document.getElementById('fraud-search-phone');
+      if (input) {
+        input.value = phoneBtn.dataset.phone;
+        const btn = document.getElementById('btn-run-full-fraud');
+        if (btn) btn.click();
+      }
+    }
+
+    // Run Full Fraud Check
+    if (e.target.closest('#btn-run-full-fraud')) {
+      const input = document.getElementById('fraud-search-phone');
+      const phone = input ? input.value.trim() : '01581703822';
+      toast.show({ type: "info", title: "Querying Couriers...", message: "Checking Steadfast, Pathao & RedX for " + phone, duration: 1500 });
+      const checkRes = await apiClient.request("fraud/check_phone", { phone });
+      const out = document.getElementById('fraud-analysis-output');
+      if (out && checkRes.data) {
+        const d = checkRes.data;
+        const isSafe = d.risk_score < 40;
+        out.innerHTML = `
+          <div class="p-5 ${isSafe ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'} rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-wider">${d.phone} Success Rate</span>
+              <div class="text-3xl font-black ${isSafe ? 'text-emerald-700' : 'text-rose-700'} mt-0.5">${d.overall_success_rate}</div>
+              <p class="text-xs font-medium mt-1">Status: <strong>${d.risk_level}</strong></p>
+            </div>
+            <div class="sm:text-right">
+              <span class="badge ${isSafe ? 'badge-success' : 'badge-danger'} text-xs">${d.recommendation}</span>
+              <p class="text-[11px] text-slate-500 mt-1">Risk Score: ${d.risk_score}/100</p>
+            </div>
+          </div>
+          <div class="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                <tr><th class="p-3">Courier Partner</th><th class="p-3">Total Orders</th><th class="p-3 text-emerald-700">Delivered</th><th class="p-3 text-rose-600">Returned</th><th class="p-3">Rate</th></tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-700">
+                <tr><td class="p-3 font-bold">Steadfast Courier</td><td class="p-3">${d.steadfast.total_orders}</td><td class="p-3 text-emerald-600 font-semibold">${d.steadfast.delivered}</td><td class="p-3 text-rose-600 font-semibold">${d.steadfast.returned}</td><td class="p-3 font-black">${d.steadfast.success_rate}</td></tr>
+                <tr><td class="p-3 font-bold">Pathao Courier</td><td class="p-3">${d.pathao.total_orders}</td><td class="p-3 text-emerald-600 font-semibold">${d.pathao.delivered}</td><td class="p-3 text-rose-600 font-semibold">${d.pathao.returned}</td><td class="p-3 font-black">${d.pathao.success_rate}</td></tr>
+                <tr><td class="p-3 font-bold">RedX Delivery</td><td class="p-3">${d.redx.total_orders}</td><td class="p-3 text-emerald-600 font-semibold">${d.redx.delivered}</td><td class="p-3 text-rose-600 font-semibold">${d.redx.returned}</td><td class="p-3 font-black">${d.redx.success_rate}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+    }
+
+    // Track order search button
+    if (e.target.closest('#btn-track-submit')) {
+      const input = document.getElementById('track-input');
+      const q = input ? input.value.trim() : '';
+      if (q) {
+        toast.show({ type: "success", title: "Shipment Located", message: "Order " + q + " is currently in transit with Steadfast Courier." });
+      }
     }
 
     // Card click navigate to details
@@ -198,17 +267,6 @@ function attachEventListeners() {
       }
     }
 
-    // Run Fraud Check
-    if (e.target.closest('#btn-run-fraud-check')) {
-      const phoneInput = document.getElementById('fraud-phone-input');
-      const phone = phoneInput ? phoneInput.value.trim() : '01581703822';
-      toast.show({ type: "info", title: "Querying Couriers...", message: `Checking Steadfast, Pathao & RedX records for ${phone}`, duration: 2000 });
-      const checkRes = await apiClient.request("fraud/check_phone", { phone });
-      setTimeout(() => {
-        toast.show({ type: "success", title: "Analysis Complete", message: `Overall delivery success rate: ${checkRes.data.overall_success_rate}. Status: ${checkRes.data.risk_level}` });
-      }, 500);
-    }
-
     // Product Detail Buy Now / Add to Cart
     if (e.target.closest('#btn-detail-add-cart')) {
       const pContainer = document.querySelector('[data-product-json]');
@@ -261,21 +319,6 @@ function attachEventListeners() {
         window.location.hash = `#/shop?search=${encodeURIComponent(input.value.trim())}`;
       }
     }
-
-    // Database Snapshot in Admin
-    if (e.target.closest('#btn-admin-snapshot')) {
-      toast.show({
-        type: "success",
-        title: "Backup Snapshot Created!",
-        message: "Google Sheets database backup saved to Google Drive with timestamp.",
-        duration: 4000
-      });
-    }
-
-    // Empty Cart Shop button
-    if (e.target.closest('#btn-empty-cart-shop')) {
-      closeCartDrawer();
-    }
   });
 
   // Global search input enter key
@@ -287,17 +330,77 @@ function attachEventListeners() {
     }
   });
 
-  // Checkout form submit
+  // Login form submit
   document.addEventListener('submit', async (e) => {
+    if (e.target.id === 'form-login') {
+      e.preventDefault();
+      const id = document.getElementById('login-identifier')?.value || '';
+      const pass = document.getElementById('login-password')?.value || '';
+      const btn = document.getElementById('btn-submit-login');
+      if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
+      
+      const res = await apiClient.request("auth/login", { identifier: id, password: pass });
+      if (res.success && res.user) {
+        authStore.setUser(res.user, res.token);
+        toast.show({ type: "success", title: "Welcome, " + res.user.name + "!", message: "Successfully signed in." });
+        
+        // Redirect based on role
+        if (res.user.role === "SUPER_ADMIN" || res.user.role === "ADMIN") {
+          window.location.hash = "#/admin";
+        } else if (res.user.role === "SELLER") {
+          window.location.hash = "#/seller";
+        } else if (res.user.role === "RESELLER") {
+          window.location.hash = "#/reseller";
+        } else if (res.user.role === "WHOLESALE_CUSTOMER") {
+          window.location.hash = "#/wholesale";
+        } else {
+          window.location.hash = "#/account";
+        }
+      } else {
+        toast.show({ type: "error", title: "Sign In Failed", message: res.message || "Invalid credentials." });
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+      }
+    }
+
+    // Register form submit
+    if (e.target.id === 'form-register') {
+      e.preventDefault();
+      const role = document.querySelector('input[name="reg_role"]:checked')?.value || 'CUSTOMER';
+      const name = document.getElementById('reg-name')?.value || '';
+      const phone = document.getElementById('reg-phone')?.value || '';
+      const pass = document.getElementById('reg-password')?.value || '';
+      const addr = document.getElementById('reg-address')?.value || '';
+
+      const btn = document.getElementById('btn-submit-register');
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating Account...'; }
+
+      const res = await apiClient.request("auth/register", { role, name, phone, password: pass, address: addr });
+      if (res.success && res.user) {
+        authStore.setUser(res.user, res.token);
+        toast.show({ type: "success", title: "Registration Complete!", message: "Welcome to Dream Cart BD, " + res.user.name + "." });
+        
+        if (role === "SELLER") {
+          window.location.hash = "#/seller";
+        } else if (role === "RESELLER") {
+          window.location.hash = "#/reseller";
+        } else if (role === "WHOLESALE_CUSTOMER") {
+          window.location.hash = "#/wholesale";
+        } else {
+          window.location.hash = "#/account";
+        }
+      } else {
+        toast.show({ type: "error", title: "Registration Failed", message: res.message || "Could not complete registration." });
+        if (btn) { btn.disabled = false; btn.textContent = 'Create Account & Open Dashboard →'; }
+      }
+    }
+
+    // Checkout form submit
     if (e.target.id === 'checkout-form') {
       e.preventDefault();
       const submitBtn = document.getElementById('btn-confirm-order');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          Recording into Sheets & Reserving Stock...
-        `;
+        submitBtn.innerHTML = `Recording order into Google Sheets...`;
       }
 
       const name = document.getElementById('checkout-name')?.value || "";
