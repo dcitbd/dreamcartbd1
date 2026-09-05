@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dream Cart BD — Smart Digital Commerce & Multi-Vendor Platform</title>
+  
+  <meta name="description" content="Bangladesh's premier high-reliability smart commerce platform: Smartwatches, organic health supplements, tactical lighting, and home accessories." />
+  <meta property="og:title" content="Dream Cart BD — Smart Digital Commerce" />
+  <meta property="og:description" content="Multi-Vendor E-Commerce Platform powered by Google Sheets & Google Apps Script API Gateway." />
+  <meta property="og:type" content="website" />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS Configuration (Suppresses dev warning) -->
+  <script>
+    // Configure Tailwind before loading script to avoid development warnings
+    window.tailwind = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              900: '#064e3b'
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom Extraordinary Design System CSS -->
+  <link rel="stylesheet" href="./src/styles/main.css" />
+  <link rel="stylesheet" href="./src/styles/admin.css" />
+  <link rel="stylesheet" href="./src/styles/responsive.css" />
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased selection:bg-emerald-500 selection:text-white">
+  
+  <!-- Main App Root Mount Point with instant preloader -->
+  <div id="app-root">
+    <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc;">
+      <div style="width: 50px; height: 50px; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 22px; box-shadow: 0 10px 25px rgba(5,150,105,0.3); margin-bottom: 16px;">
+        DC
+      </div>
+      <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0;">Dream Cart BD</h2>
+      <p style="font-size: 13px; color: #64748b; margin-top: 6px;">Loading platform and live catalog...</p>
+    </div>
+  </div>
+
+  <!-- Main ES Module Bootstrapper with Relative Path -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
