@@ -1,6 +1,6 @@
 /**
  * DREAM CART BD — HEADER COMPONENT
- * Luxury brand header, live search, categories menu, cart counter.
+ * Luxury brand header, multi-role auth buttons, live search, categories menu, cart counter.
  */
 
 import { cartStore } from '../store/cartStore.js';
@@ -9,6 +9,26 @@ import { authStore } from '../store/authStore.js';
 export function renderHeader() {
   const cartCount = cartStore.getCount();
   const user = authStore.user;
+  const isAuth = authStore.isAuthenticated();
+
+  // Determine dashboard link based on role
+  let dashboardLink = "#/account";
+  let roleBadge = "Customer";
+  if (user) {
+    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+      dashboardLink = "#/admin";
+      roleBadge = "Super Admin";
+    } else if (user.role === "SELLER") {
+      dashboardLink = "#/seller";
+      roleBadge = "Seller";
+    } else if (user.role === "RESELLER") {
+      dashboardLink = "#/reseller";
+      roleBadge = "Reseller";
+    } else if (user.role === "WHOLESALE_CUSTOMER") {
+      dashboardLink = "#/wholesale";
+      roleBadge = "Wholesaler";
+    }
+  }
 
   return `
     <!-- Top Announcement Bar -->
@@ -64,19 +84,37 @@ export function renderHeader() {
         </div>
 
         <!-- Action Items -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           
-          <!-- Fraud Check Tool button for quick demo/access -->
-          <button id="btn-open-fraud-tool" class="hidden lg:flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-3 py-1.5 rounded-full text-xs font-semibold transition" title="Check Customer Courier Success Rate">
+          <!-- Fraud Checker Tool -->
+          <a href="#/fraud" class="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-3 py-1.5 rounded-full text-xs font-semibold transition" title="Check Customer Courier Success Rate">
             <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Fraud Checker
-          </button>
-
-          <!-- Admin Portal Link -->
-          <a href="#/admin" class="hidden sm:flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-full text-xs font-semibold transition">
-            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            Admin Panel
+            <span class="hidden sm:inline">Fraud Checker</span>
           </a>
+
+          <!-- Dynamic Auth State (Login/Register OR User Dashboard) -->
+          ${isAuth ? `
+            <div class="flex items-center gap-2">
+              <a href="${dashboardLink}" class="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-bold transition">
+                <span>👤</span>
+                <span class="hidden sm:inline">${user.name ? user.name.split(' ')[0] : 'My Account'}</span>
+                <span class="bg-emerald-600 text-white text-[9px] px-1.5 py-0.2 rounded">${roleBadge}</span>
+              </a>
+              <button id="btn-header-logout" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Logout">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+              </button>
+            </div>
+          ` : `
+            <div class="flex items-center gap-1.5">
+              <a href="#/login" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                <span>Login</span>
+              </a>
+              <a href="#/register" class="hidden sm:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-full text-xs font-bold transition shadow-sm">
+                Register
+              </a>
+            </div>
+          `}
 
           <!-- Cart Trigger Button -->
           <button id="btn-open-cart" class="relative p-2.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition flex items-center justify-center">
