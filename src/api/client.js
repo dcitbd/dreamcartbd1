@@ -115,7 +115,7 @@ const MOCK_PRODUCTS = [
   },
   {
     product_id: "PRD-2609-1005",
-    name: "Huawei Band 8 Fitness Tracker — 1.47" AMOLED Ultra Slim",
+    name: "Huawei Band 8 Fitness Tracker — 1.47 Inch AMOLED Ultra Slim",
     slug: "huawei-band-8-fitness-tracker",
     sku: "HW-BND8-EM",
     category_id: "CAT-SMARTWATCH",
